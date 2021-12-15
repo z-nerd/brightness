@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+import os
+import sys
+import signal
+import argparse
+import subprocess
+
+
+def main() -> int:
+    """Echo the input arguments to standard output"""
+    # ******************* Args ******************* 
+    parser = argparse.ArgumentParser(description='')
+    parser.add_argument('-v', '--value', type=int,
+                            choices=range(5,101), 
+                            metavar='[5-100]', 
+                            help='The value of display brightness',
+                            default=50)
+    parser.add_argument('-s', '--source', type=str,
+                            required=False, 
+                            help='Path of display source',
+                            default='/sys/class/backlight/nv_backlight/brightness')
+    # parser.add_argument('-s', '--source', action='store_true', required=False, help='The name of the color')
+    args = parser.parse_args()
+    # *******************  ******************* 
+
+    # ******************* check user keyboard ******************* 
+    signal.signal(signal.SIGINT, keyboardInterruptHandler)    
+    # *******************  ******************* 
+
+    # ******************* root access ******************* 
+    prompt_sudo()
+    # *******************  ******************* 
+    
+    with open(args.source, 'w') as file:
+        file.write(str(args.value))
+    
+    return 0
+
+
+
+def keyboardInterruptHandler(signal, frame):
+    print("KeyboardInterrupt (ID: {}) User exit the program!".format(signal))
+    sys.exit()
+
+
+def prompt_sudo():
+    try:
+        if os.geteuid() != 0:
+            print("You need sudo access for running this program!")
+            subprocess.call(['sudo', 'python3', *sys.argv])
+            sys.exit()
+    except Exception as e:
+        print("An exception occurred: ", e) 
+
+
+
+if __name__ == '__main__':
+    sys.exit(main())
